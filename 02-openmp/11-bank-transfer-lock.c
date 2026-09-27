@@ -8,7 +8,7 @@ omp_lock_t balance_lock;
 
 int main() {
 
-    omp_init_lock(&balance_lock);
+    omp_init_lock(&balance_lock); // iniciando o lock
 
     #pragma omp parallel for num_threads(4)
     for (int i = 0; i < NUM_OPERATIONS; i++) {
