@@ -6,7 +6,6 @@
 #define NUM_PRODUCTS 4
 
 void process_category(const char *category, double prices[], int num_products,  double base_discount) {
-
     // desconto inicial definido pela categoria
     double discount = base_discount;
 
