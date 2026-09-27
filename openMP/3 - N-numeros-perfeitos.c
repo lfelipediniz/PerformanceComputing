@@ -9,6 +9,7 @@
 int main() {
 
     omp_set_nested(1); // permitindo palelismo aninhado
+    // nova equipe de theads sendo formada dentro do for
 
     #pragma omp parallel for num_threads(NT1)
     for (int i = 1; i <= N; i++) {
