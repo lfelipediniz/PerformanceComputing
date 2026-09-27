@@ -2,7 +2,7 @@
 #include <omp.h>
 
 #define NUM_ORDERS 8
-#define N1
+#define N1 6
 
 void process_order(int order_id) {
     printf(
