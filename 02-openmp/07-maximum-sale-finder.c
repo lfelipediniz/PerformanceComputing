@@ -1,12 +1,12 @@
 #include <stdio.h>
 #include <omp.h>
 
-#define N 8
+#define NUM_SALES 8
 #define NUM_THREADS 4
 
 int main() {
 
-    double sales[N] = {
+    double sales[NUM_SALES] = {
         1200.0,
         850.0,
         3100.0,
@@ -27,7 +27,7 @@ int main() {
 
         // distribuindo trabalho entre as threads
         #pragma omp for
-        for (int i = 0; i < N; i++) {
+        for (int i = 0; i < NUM_SALES; i++) {
             if (sales[i] > local_max) {
                 local_max = sales[i];
                 local_seller = i;
@@ -46,7 +46,7 @@ int main() {
     }
 
     printf(
-        "Maior venda: %.2f | Vendedor: %d\n",
+        "Highest sale: %.2f | Seller: %d\n",
         max_sale,
         best_seller
     );

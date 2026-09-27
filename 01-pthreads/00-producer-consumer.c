@@ -4,44 +4,44 @@
 #include <semaphore.h>
 
 
-#define BUFFER_LEN 11
-#define MAX_PRODUCED 100
+#define BUFFER_SIZE 11
+#define MAX_ITEMS 100
 
-int stack[BUFFER_LEN];
-int item_available = 0;
-int produced = 0;
-int consumed = 0;
+int buffer[BUFFER_SIZE];
+int available_items = 0;
+int produced_count = 0;
+int consumed_count = 0;
 
-pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-sem_t empty, full;
+pthread_mutex_t buffer_mutex = PTHREAD_MUTEX_INITIALIZER;
+sem_t empty_slots, filled_slots;
 
-void add_stack(int item){
-    stack[item_available] = item;
-    item_available++;
-    produced++;
+void push_item(int item){
+    buffer[available_items] = item;
+    available_items++;
+    produced_count++;
 }
 
-int pop_stack(){
-    item_available--;
-    consumed++;
+int pop_item(){
+    available_items--;
+    consumed_count++;
 
-    return stack[item_available];
+    return buffer[available_items];
 }
 
 void * producer(){
-    while (produced < MAX_PRODUCED) {
+    while (produced_count < MAX_ITEMS) {
         int item = rand()%1000;
         // esperando alguma posicao do buffer ficar vazia
-        sem_wait(&empty);
+        sem_wait(&empty_slots);
 
         // entrando na região critica
-        pthread_mutex_lock(&mutex);
-        add_stack(item);
-        pthread_mutex_unlock(&mutex); // saindo regiao critica
+        pthread_mutex_lock(&buffer_mutex);
+        push_item(item);
+        pthread_mutex_unlock(&buffer_mutex); // saindo regiao critica
         
-        sem_post(&full); // avisando que posicao buffer esta cheia
+        sem_post(&filled_slots); // avisando que posicao buffer esta cheia
 
-        printf("\nO item %d produzido com o valor %d esta na posição %d buffer\n", produced, item, item_available);
+        printf("\nItem %d was produced with value %d at buffer position %d\n", produced_count, item, available_items);
 
     }
 
@@ -49,16 +49,16 @@ void * producer(){
 }
 
 void * consumer(){
-    while (consumed < MAX_PRODUCED) {
-        sem_wait(&full);
+    while (consumed_count < MAX_ITEMS) {
+        sem_wait(&filled_slots);
 
-        pthread_mutex_lock(&mutex);
-        int item = pop_stack();;
-        pthread_mutex_unlock(&mutex);
+        pthread_mutex_lock(&buffer_mutex);
+        int item = pop_item();;
+        pthread_mutex_unlock(&buffer_mutex);
 
-        sem_post(&empty);
+        sem_post(&empty_slots);
 
-        printf("\nItem: %d consumido\n", item);
+        printf("\nItem %d was consumed\n", item);
     }
 
     pthread_exit(0);
@@ -66,41 +66,40 @@ void * consumer(){
 
 
 int main() {
-    pthread_t prod_handle, cons_handle;
+    pthread_t producer_thread, consumer_thread;
 
     // todas posicoes do buffer vazias
-    sem_init(&empty, 0, BUFFER_LEN);
+    sem_init(&empty_slots, 0, BUFFER_SIZE);
 
     // nenhum item cheio
-    sem_init(&full, 0, 0);
+    sem_init(&filled_slots, 0, 0);
 
     // criando as threads
     pthread_create(
-        &prod_handle,
+        &producer_thread,
         NULL,
         producer, // funcao do producer
         NULL
     );
 
     pthread_create(
-        &cons_handle,
+        &consumer_thread,
         NULL,
         consumer,
         NULL
     );
 
     // esperadno as duas threads terminarem
-    pthread_join(prod_handle, NULL);
-    pthread_join(cons_handle, NULL);
+    pthread_join(producer_thread, NULL);
+    pthread_join(consumer_thread, NULL);
 
-    sem_destroy(&empty);
-    sem_destroy(&full);
+    sem_destroy(&empty_slots);
+    sem_destroy(&filled_slots);
 
-    pthread_mutex_destroy(&mutex);
+    pthread_mutex_destroy(&buffer_mutex);
 
     return 0;
 }
-
 
 
 

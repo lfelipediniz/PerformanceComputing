@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <omp.h>
 
-#define NT1 4
-#define NT2 2
+#define OUTER_THREADS 4
+#define INNER_THREADS 2
 #define NUM_PRODUCTS 4
 
 void process_category(const char *category, double prices[], int num_products,  double base_discount) {
@@ -10,7 +10,7 @@ void process_category(const char *category, double prices[], int num_products,  
     double discount = base_discount;
 
     // cada thread interna recebe uma copia inicializada de discount
-    #pragma omp parallel num_threads(NT2) firstprivate(discount)
+    #pragma omp parallel num_threads(INNER_THREADS) firstprivate(discount)
     {
         int channel = omp_get_thread_num();
 
@@ -28,8 +28,8 @@ void process_category(const char *category, double prices[], int num_products,  
                 prices[product] - (prices[product] * discount);
 
             printf(
-                "categoria=%s | produto=%d | channel=%d | "
-                "desconto=%.0f%% | preco=%.2f | final=%.2f\n",
+                "category=%s | product=%d | channel=%d | "
+                "discount=%.0f%% | price=%.2f | final=%.2f\n",
                 category,
                 product,
                 channel,
@@ -79,7 +79,7 @@ int main() {
     // permite que uma regiao paralela crie outro time de threads
     omp_set_nested(1);
 
-    #pragma omp parallel num_threads(NT1)
+    #pragma omp parallel num_threads(OUTER_THREADS)
     {
         // distribui as categorias entre as threads do primeiro nivel
         // cada sections sao blocos independentes de trabalho que 
@@ -87,18 +87,18 @@ int main() {
         #pragma omp sections
         {
             #pragma omp section
-            process_category( "Eletronicos", electronics, NUM_PRODUCTS, 0.10);
+            process_category("Electronics", electronics, NUM_PRODUCTS, 0.10);
         
 
             #pragma omp section
-            process_category("Livros", books, NUM_PRODUCTS, 0.20);
+            process_category("Books", books, NUM_PRODUCTS, 0.20);
         
 
             #pragma omp section
-            process_category("Roupas", clothes, NUM_PRODUCTS, 0.15);
+            process_category("Clothing", clothes, NUM_PRODUCTS, 0.15);
 
             #pragma omp section
-            process_category("Alimentos", food, NUM_PRODUCTS, 0.05 );
+            process_category("Food", food, NUM_PRODUCTS, 0.05 );
         
         }
     }

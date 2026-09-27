@@ -5,31 +5,31 @@
 #include <stdbool.h>
 
 
-#define BUFFER_LEN 7
-#define MAX_PRODUCED 100
+#define BUFFER_SIZE 7
+#define MAX_ITEMS 100
 
-#define NUM_PROD 3
-#define NUM_CONS 4
+#define NUM_PRODUCERS 3
+#define NUM_CONSUMERS 4
 
-int stack[BUFFER_LEN];
-int item_available = 0;
-int produced = 0;
-int consumed = 0;
+int buffer[BUFFER_SIZE];
+int available_items = 0;
+int produced_count = 0;
+int consumed_count = 0;
 
-pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-sem_t empty, full;
+pthread_mutex_t buffer_mutex = PTHREAD_MUTEX_INITIALIZER;
+sem_t empty_slots, filled_slots;
 
-void add_stack(int item){
-    stack[item_available] = item;
-    item_available++;
-    produced++;
+void push_item(int item){
+    buffer[available_items] = item;
+    available_items++;
+    produced_count++;
 }
 
-int pop_stack(){
-    item_available--;
-    consumed++;
+int pop_item(){
+    available_items--;
+    consumed_count++;
 
-    return stack[item_available];
+    return buffer[available_items];
 }
 
 void * producer(void * arg){
@@ -38,28 +38,28 @@ void * producer(void * arg){
     while(true) {
         int item = rand()%1000;
 
-        sem_wait(&empty);
-        pthread_mutex_lock(&mutex);
+        sem_wait(&empty_slots);
+        pthread_mutex_lock(&buffer_mutex);
 
-        if (produced >= MAX_PRODUCED){
-            pthread_mutex_unlock(&mutex);
-            sem_post(&empty);
+        if (produced_count >= MAX_ITEMS){
+            pthread_mutex_unlock(&buffer_mutex);
+            sem_post(&empty_slots);
 
             break;
         } else {
-            add_stack(item);
+            push_item(item);
         }
 
         printf(
-            "\nProdutor %d produziu o item %d com valor %d na posição %d do buffer\n",
+            "\nProducer %d produced item %d with value %d at buffer position %d\n",
             id,
-            produced,
+            produced_count,
             item,
-            item_available
+            available_items
         );
 
-        pthread_mutex_unlock(&mutex);
-        sem_post(&full);
+        pthread_mutex_unlock(&buffer_mutex);
+        sem_post(&filled_slots);
     }
 
     pthread_exit(0);
@@ -70,33 +70,33 @@ void * consumer(void *arg) {
     int item;
 
     while(true) {
-        sem_wait(&full); // reserva um item
-        pthread_mutex_lock(&mutex);
+        sem_wait(&filled_slots); // reserva um item
+        pthread_mutex_lock(&buffer_mutex);
 
-        if (consumed >= MAX_PRODUCED){
-            pthread_mutex_unlock(&mutex);
-            sem_post(&full);
+        if (consumed_count >= MAX_ITEMS){
+            pthread_mutex_unlock(&buffer_mutex);
+            sem_post(&filled_slots);
             
             break;
         } else {
-            item = pop_stack();
+            item = pop_item();
         }
 
         printf(
-            "\nConsumidor %d consumiu o item %d com valor %d na posição %d do buffer\n",
+            "\nConsumer %d consumed item %d with value %d at buffer position %d\n",
             id,
-            consumed,
+            consumed_count,
             item,
-            item_available
+            available_items
         );
-        pthread_mutex_unlock(&mutex);
+        pthread_mutex_unlock(&buffer_mutex);
 
         // como retirou um item, liberou uma posição do buffer
-        sem_post(&empty);
+        sem_post(&empty_slots);
 
         // edge case quadno o cunsumidor pega o ultimo produto
-        if (consumed >= MAX_PRODUCED){
-            sem_post(&full);
+        if (consumed_count >= MAX_ITEMS){
+            sem_post(&filled_slots);
 
         }
     }
@@ -105,59 +105,58 @@ void * consumer(void *arg) {
 }
 
 int main(){
-    pthread_t prod_handle[NUM_PROD], cons_handle[NUM_CONS];
+    pthread_t producer_threads[NUM_PRODUCERS], consumer_threads[NUM_CONSUMERS];
 
-    int prod_id[NUM_PROD];
-    int cons_id[NUM_CONS];
+    int producer_ids[NUM_PRODUCERS];
+    int consumer_ids[NUM_CONSUMERS];
 
     // todas posicoes do buffer vazias
-    sem_init(&empty, 0, BUFFER_LEN);
+    sem_init(&empty_slots, 0, BUFFER_SIZE);
 
     // nenhum item cheio
-    sem_init(&full, 0, 0);
+    sem_init(&filled_slots, 0, 0);
 
-    for (int i = 0; i < NUM_PROD; i++){
-        prod_id[i] = i;
+    for (int i = 0; i < NUM_PRODUCERS; i++){
+        producer_ids[i] = i;
         pthread_create(
-            &prod_handle[i],
+            &producer_threads[i],
             NULL,
             producer, //funcao do producer
-            &prod_id[i]
+            &producer_ids[i]
         );
     }
 
-    for (int i = 0; i < NUM_CONS; i++){
-        cons_id[i] = i;
+    for (int i = 0; i < NUM_CONSUMERS; i++){
+        consumer_ids[i] = i;
         pthread_create(
-            &cons_handle[i],
+            &consumer_threads[i],
             NULL,
             consumer, 
-            &cons_id[i]
+            &consumer_ids[i]
         );
     }
     
-    for (int i = 0; i < NUM_PROD; i++){
+    for (int i = 0; i < NUM_PRODUCERS; i++){
         pthread_join(
-            prod_handle[i],
+            producer_threads[i],
             NULL
         );
     }
 
-    for (int i = 0; i < NUM_CONS; i++){
+    for (int i = 0; i < NUM_CONSUMERS; i++){
         pthread_join(
-            cons_handle[i],
+            consumer_threads[i],
             NULL
         );
     }
 
-    sem_destroy(&empty);
-    sem_destroy(&full);
+    sem_destroy(&empty_slots);
+    sem_destroy(&filled_slots);
 
-    pthread_mutex_destroy(&mutex);
+    pthread_mutex_destroy(&buffer_mutex);
 
 
 
     return 0;
 }
-
 

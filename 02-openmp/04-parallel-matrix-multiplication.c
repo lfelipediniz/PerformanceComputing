@@ -10,15 +10,15 @@
 #define NUM_THREADS 8
 
 int main() {
-    int A[ROWS_A][COLS_A];
-    int B[ROWS_B][COLS_B];
-    int C[ROWS_A][COLS_B];
+    int matrix_a[ROWS_A][COLS_A];
+    int matrix_b[ROWS_B][COLS_B];
+    int result_matrix[ROWS_A][COLS_B];
 
     // preenchendo a matriz A
     #pragma omp parallel for num_threads(NUM_THREADS) collapse(2)
     for (int i = 0; i < ROWS_A; i++) {
         for (int j = 0; j < COLS_A; j++) {
-            A[i][j] = i + 1;
+            matrix_a[i][j] = i + 1;
         }
     }
 
@@ -49,7 +49,7 @@ int main() {
     #pragma omp parallel for num_threads(NUM_THREADS) collapse(2)
     for (int i = 0; i < ROWS_B; i++) {
         for (int j = 0; j < COLS_B; j++) {
-            B[i][j] = j + 1;
+            matrix_b[i][j] = j + 1;
         }
     }
 
@@ -90,7 +90,7 @@ int main() {
 
             #pragma omp simd reduction(+:sum)
             for (int k = 0; k < COLS_A; k++) {
-                sum += A[i][k] * B[k][j];
+                sum += matrix_a[i][k] * matrix_b[k][j];
             }
 
             // explicacao do simd reduction
@@ -116,44 +116,44 @@ int main() {
             // collapse(2) -> paralelismo entre diferentes C[i][j]
             // simd reduction -> paralelismo dentro do calculo de um C[i][j]
 
-            C[i][j] = sum;
+            result_matrix[i][j] = sum;
         }
     }
 
     // imprimindo a matriz A
-    printf("Matriz A:\n");
+    printf("Matrix A:\n");
 
     for (int i = 0; i < ROWS_A; i++) {
         printf("| ");
 
         for (int j = 0; j < COLS_A; j++) {
-            printf("%d ", A[i][j]);
+            printf("%d ", matrix_a[i][j]);
         }
 
         printf("|\n");
     }
 
     // imprimindo a matriz B
-    printf("\nMatriz B:\n");
+    printf("\nMatrix B:\n");
 
     for (int i = 0; i < ROWS_B; i++) {
         printf("| ");
 
         for (int j = 0; j < COLS_B; j++) {
-            printf("%d ", B[i][j]);
+            printf("%d ", matrix_b[i][j]);
         }
 
         printf("|\n");
     }
 
     // imprimindo a matriz C
-    printf("\nMatriz C = A x B:\n");
+    printf("\nMatrix C = A x B:\n");
 
     for (int i = 0; i < ROWS_A; i++) {
         printf("| ");
 
         for (int j = 0; j < COLS_B; j++) {
-            printf("%d ", C[i][j]);
+            printf("%d ", result_matrix[i][j]);
         }
 
         printf("|\n");

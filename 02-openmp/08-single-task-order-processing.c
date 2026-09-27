@@ -2,7 +2,7 @@
 #include <omp.h>
 
 #define NUM_ORDERS 8
-#define N1 6
+#define NUM_THREADS 6
 
 void process_order(int order_id) {
     printf(
@@ -14,7 +14,7 @@ void process_order(int order_id) {
 
 int main() {
 
-    #pragma omp parallel num_threads(N1)
+    #pragma omp parallel num_threads(NUM_THREADS)
     {
         // apenas uma thread entra aqui para criar as tarefas
         #pragma omp single

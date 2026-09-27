@@ -3,45 +3,47 @@
 #include <semaphore.h>
 #include <pthread.h>
 
-#define T 5
+#define NUM_THREADS 5
 
 int token = 0;
 
-pthread_t thread_handler[T];
-sem_t sempahore_handler[T];
+pthread_t threads[NUM_THREADS];
+sem_t semaphores[NUM_THREADS];
 
-void *thread_function(void *p_ref){
-    int p = * ((int *) p_ref);  
+void *thread_function(void *thread_id_reference){
+    int thread_id = * ((int *) thread_id_reference);
 
-    sem_wait(&sempahore_handler[p]);
+    sem_wait(&semaphores[thread_id]);
 
-    printf("Thread %d with token %d\n", p, token);
+    printf("Thread %d with token %d\n", thread_id, token);
     fflush(0);
     token++;
 
-    sem_post(&sempahore_handler[(p + 1) % T]);
+    sem_post(&semaphores[(thread_id + 1) % NUM_THREADS]);
+
+    return NULL;
 }
 
 int main(void){
-    for (int i = 0; i < T; i++){
-        sem_init(&sempahore_handler[i], 0, 0);
+    for (int i = 0; i < NUM_THREADS; i++){
+        sem_init(&semaphores[i], 0, 0);
     }
 
-    int p[T];
+    int thread_ids[NUM_THREADS];
 
-    for (int i = 0; i < T; i++){
-        p[i] = i;
+    for (int i = 0; i < NUM_THREADS; i++){
+        thread_ids[i] = i;
 
-        if (pthread_create(&thread_handler[i], 0, (void *) thread_function, (void *) &p[i]) != 0){
+        if (pthread_create(&threads[i], 0, (void *) thread_function, (void *) &thread_ids[i]) != 0){
             printf("Error!");
             fflush(0);
         }
     }
 
-    sem_post(&sempahore_handler[0]);
+    sem_post(&semaphores[0]);
 
-    for (int i = 0; i < T; i++){
-        pthread_join(thread_handler[i], 0);
+    for (int i = 0; i < NUM_THREADS; i++){
+        pthread_join(threads[i], 0);
     }
 
     printf("Main thread exiting");

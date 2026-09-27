@@ -6,14 +6,14 @@
 
 
 int main(){
-    printf("Hello World na parte sequencial!\n");
+    printf("Hello World from the sequential section!\n");
 
     #pragma omp parallel num_threads(NUM_THREADS) 
     {
         int thread_id = omp_get_thread_num(); // qual o id da thread que eu esotu agora?
         int num_threads = omp_get_num_threads(); // quantas threads estao trabalhando comigo?
 
-        printf("Hello World! Eu estou na thread: %d, e tem %d threads trabalhando cmg\n",
+        printf("Hello World! I am thread %d, and there are %d threads working with me\n",
         thread_id,
         num_threads
         );

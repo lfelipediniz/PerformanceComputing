@@ -9,7 +9,6 @@
 
     int values[10];
     int sum = 0;
-    int sum_par = 0;
 
     #pragma omp parallel for num_threads(NUM_THREADS) 
     for (int i = 0; i < ARRAY_LEN; i++){ // como eu declaro o i aqui dentro ele já é private
@@ -21,7 +20,7 @@
         sum += values[i];
     }
 
-    printf("\n\n%d", sum);
+    printf("\n\nSum: %d\n", sum);
 
     return 0;
 }

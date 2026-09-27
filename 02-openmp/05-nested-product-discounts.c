@@ -23,7 +23,7 @@ int main() {
             price -= (price * discounts[discount]);
 
             printf(
-                "produto=%d desconto=%.0f%% preco=%.2f\n",
+                "product=%d discount=%.0f%% price=%.2f\n",
                 product,
                 discounts[discount] * 100,
                 price
